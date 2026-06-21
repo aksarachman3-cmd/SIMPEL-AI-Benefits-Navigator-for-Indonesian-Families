@@ -21,7 +21,7 @@
 | **🟢 Live Web App** | [Streamlit Cloud](https://simpel.streamlit.app/) |
 | **📓 Jupyter Notebook** | [eligibility_classifier.ipynb](jupyter/eligibility_classifier.ipynb) |
 | **🎨 Figma Prototype** | [View on Figma](https://seven-five-38917158.figma.site) *(static mockup – not connected to AI)* |
-| **📹 Video Walkthrough** | [YouTube (unlisted)]([ISI_LINK_YOUTUBE]) |
+| **📹 Video Walkthrough** | [YouTube (unlisted)](https://youtu.be/igHWbig9Zew?si=0p7M_vpV0PqD5_gE) |
 | **📸 Documentation & Screenshots** | [docs/README.md](docs/README.md) |
 
 ---
