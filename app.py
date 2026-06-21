@@ -43,7 +43,7 @@ st.caption("SIMPEL is a hackathon prototype. Not an official government tool. Bu
 st.markdown(t["subtitle"])
 st.caption(t["caption"])
 
-# ---------- PROGRAM DETAILS (from language dictionary) ----------
+# ---------- PROGRAM DETAILS ----------
 program_info = t["program_info"]
 
 # ---------- QUESTIONNAIRE ----------
@@ -98,54 +98,9 @@ if st.button(t["btn"], type="primary"):
         urutan = ["PKH", "BPNT", "PIP", "PBI_JKN"]
         program_list = [p for p in urutan if p in program_list]
 
-        # ---------- BUILD THE RESULT HTML (for print hijack) ----------
-        result_html = f"""
-        <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
-            <h2>{t["result_title"]}</h2>
-            <p><strong>{t["success_msg"].format(len(program_list))}</strong></p>
-        """
-        for prog in program_list:
-            info = program_info[prog]
-            conf = confidences[prog]
-            result_html += f"""
-            <div style="border: 1px solid #ccc; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
-                <h3>✅ {info['nama']} – {t["why"]} {conf:.0%}</h3>
-                <p><strong>{t["why"]}</strong> {info['alasan']}</p>
-                <p><strong>{t["desc"]}:</strong> {info['deskripsi']}</p>
-                <p><strong>{t["docs"]}:</strong><br>{info['dokumen'].replace(', ', '<br>- ')}</p>
-                <p><strong>{t["place"]}:</strong> {info['tempat']}</p>
-                <p><strong>{t["source"]}:</strong> {info['sumber']}</p>
-            </div>
-            """
-        result_html += f"""
-            <div style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107;">
-                <strong>⚠️ {t["disclaimer"].replace('**', '')}</strong>
-            </div>
-            <p style="color: #666; margin-top: 10px;">{t["print_tip"]}</p>
-        </div>
-        """
+        # ---------- DISPLAY RESULTS ON SCREEN ----------
+        st.markdown('<div id="result-area">', unsafe_allow_html=True)
 
-        # ---------- HIJACK PRINT WITH JAVASCRIPT ----------
-        st.markdown(f"""
-        <script>
-        var printContent = `{result_html}`;
-        var originalBody = null;
-
-        window.onbeforeprint = function() {{
-            originalBody = document.body.innerHTML;
-            document.body.innerHTML = printContent;
-        }};
-
-        window.onafterprint = function() {{
-            if (originalBody) {{
-                document.body.innerHTML = originalBody;
-                originalBody = null;
-            }}
-        }};
-        </script>
-        """, unsafe_allow_html=True)
-
-        # ---------- SHOW THE RESULTS ON SCREEN (normal Streamlit UI) ----------
         st.markdown("---")
         st.subheader(t["result_title"])
 
@@ -169,5 +124,31 @@ if st.button(t["btn"], type="primary"):
         st.warning(t["disclaimer"])
         st.info(t["print_tip"])
 
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        # ---------- DOWNLOAD BUTTON (html2canvas) ----------
+        st.markdown("""
+        <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+        <script>
+        function downloadResultImage() {
+            const element = document.getElementById('result-area');
+            html2canvas(element, { scale: 2 }).then(canvas => {
+                canvas.toBlob(function(blob) {
+                    const link = document.createElement('a');
+                    link.download = 'simpel-result.png';
+                    link.href = URL.createObjectURL(blob);
+                    link.click();
+                }, 'image/png');
+            });
+        }
+        </script>
+        <div style="text-align: center; margin-top: 20px;">
+            <button onclick="downloadResultImage()" style="padding: 10px 24px; background-color: #10B981; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
+                📥 Download Result as Image
+            </button>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ---------- RESET BUTTON ----------
         if st.button(t["reset"]):
             st.rerun()
