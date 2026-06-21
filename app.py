@@ -123,25 +123,26 @@ if st.button(t["btn"], type="primary"):
         st.warning(t["disclaimer"])
         st.info(t["print_tip"])
 
-        # ---------- GENERATE PDF & DOWNLOAD BUTTON ----------
+        # ---------- GENERATE PDF (safe ASCII only) ----------
         try:
             pdf = FPDF()
             pdf.add_page()
             pdf.set_auto_page_break(auto=True, margin=15)
 
-            # ---- Helper function to strip emojis, markdown, and unsafe Unicode ----
+            # ---- Clean text to remove all characters unsupported by Helvetica ----
             def clean(text):
-                # Remove emojis, markdown formatting, and Unicode characters
-                # that the built-in Helvetica font cannot render
-                for ch in [
-                    "📋", "✅", "⚠️", "💡", "🧭", "🔍", "📄", "🔄",
-                    "**", "*",           # Markdown
-                    "—", "–",           # Em dash, en dash
-                    "’", "'",           # Curly quotes
-                    "“", "”", '"',      # Curly double quotes
-                ]:
-                    text = text.replace(ch, "-" if ch in ["—", "–"] else "")
-                return text.strip()
+                out = []
+                for ch in text:
+                    if ch in ("—", "–"):
+                        out.append("-")          # em/en dash → hyphen
+                    elif ch in ("’", "'"):
+                        out.append("'")          # curly right single quote → straight apostrophe
+                    elif ch in ("“", "”", '"'):
+                        out.append('"')          # curly double quotes → straight quote
+                    elif ord(ch) < 128 and (ch.isprintable() or ch in "\n\r\t"):
+                        out.append(ch)           # keep ASCII printable and control characters
+                    # else: drop emojis and other unsupported characters
+                return "".join(out).strip()
 
             # Title
             pdf.set_font("Helvetica", 'B', 16)
@@ -149,11 +150,11 @@ if st.button(t["btn"], type="primary"):
             pdf.ln(6)
 
             if not program_list:
-                pdf.set_font("Helvetica", size=11)
+                pdf.set_font("Helvetica", '', 11)
                 pdf.multi_cell(0, 6, txt=clean(t["no_result"]))
             else:
                 success_msg = clean(t["success_msg"].format(len(program_list)))
-                pdf.set_font("Helvetica", size=11)
+                pdf.set_font("Helvetica", '', 11)
                 pdf.multi_cell(0, 6, txt=success_msg)
                 pdf.ln(4)
 
@@ -163,27 +164,26 @@ if st.button(t["btn"], type="primary"):
 
                     prog_name = clean(info['nama'])
                     pdf.set_font("Helvetica", 'B', 12)
-                    # Use a simple hyphen instead of em dash
                     pdf.cell(0, 8, txt=f"{prog_name} - {t['why']} {conf:.0%}", ln=True)
-                    pdf.set_font("Helvetica", size=10)
+                    pdf.set_font("Helvetica", '', 10)
 
                     pdf.multi_cell(0, 5, txt=f"{t['why']} {clean(info['alasan'])}")
                     pdf.multi_cell(0, 5, txt=f"{t['desc']}: {clean(info['deskripsi'])}")
                     pdf.ln(2)
                     pdf.set_font("Helvetica", 'B', 10)
                     pdf.cell(0, 6, txt=f"{t['docs']}:", ln=True)
-                    pdf.set_font("Helvetica", size=10)
+                    pdf.set_font("Helvetica", '', 10)
                     for doc in info['dokumen'].split(', '):
                         pdf.cell(8, 6, txt="")
                         pdf.cell(0, 6, txt=f"• {clean(doc)}", ln=True)
                     pdf.ln(2)
                     pdf.set_font("Helvetica", 'B', 10)
                     pdf.cell(0, 6, txt=f"{t['place']}: ", ln=False)
-                    pdf.set_font("Helvetica", size=10)
+                    pdf.set_font("Helvetica", '', 10)
                     pdf.cell(0, 6, txt=clean(info['tempat']), ln=True)
                     pdf.set_font("Helvetica", 'B', 10)
                     pdf.cell(0, 6, txt=f"{t['source']}: ", ln=False)
-                    pdf.set_font("Helvetica", size=10)
+                    pdf.set_font("Helvetica", '', 10)
                     sumber_text = info['sumber']
                     if '[' in sumber_text and '](' in sumber_text:
                         start_text = sumber_text.index('[') + 1
