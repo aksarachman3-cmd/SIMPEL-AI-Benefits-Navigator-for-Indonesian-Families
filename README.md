@@ -76,11 +76,11 @@ SIMPEL asks **7 plain‑language questions** (in Bahasa Indonesia), then uses a 
 
 ## 🧠 AI Architecture
 
-**Input:** 7 multiple‑choice answers (income bracket, family size, presence of school child, toddler/pregnancy, elderly, disability, wall material), each mapped to an ordinal or binary numeric feature.  
-**AI capability:** Multi‑label classification via a Random Forest (scikit‑learn `MultiOutputClassifier`, 100 trees, max‑depth=5). One input can produce multiple simultaneous program recommendations.  
-**Processing:** The 7‑feature vector is passed to `predict_proba()`; each of the four binary estimators returns a probability. A threshold of ≥0.5 selects likely programs. Displayed confidence is capped at 95%.  
-**Outputs:** A list of programs (PKH, BPNT, PIP, PBI‑JKN) with confidence score, plain‑language explanation, required documents checklist, and the exact government office to visit. Model is loaded once in RAM via Streamlit caching; inference <10 ms with zero external API calls.  
-**Evaluation:** Validated on a held‑out test set (F1 0.95–0.99) and manually stress‑tested with edge cases (wealthy households, elderly alone).
+- **Input:** 7 multiple‑choice answers (income bracket, family size, presence of school child, toddler/pregnancy, elderly, disability, wall material), each mapped to an ordinal or binary numeric feature.  
+- **AI capability:** Multi‑label classification via a Random Forest (scikit‑learn `MultiOutputClassifier`, 100 trees, max‑depth=5). One input can produce multiple simultaneous program recommendations.  
+- **Processing:** The 7‑feature vector is passed to `predict_proba()`; each of the four binary estimators returns a probability. A threshold of ≥0.5 selects likely programs. Displayed confidence is capped at 95%.  
+- **Outputs:** A list of programs (PKH, BPNT, PIP, PBI‑JKN) with confidence score, plain‑language explanation, required documents checklist, and the exact government office to visit. Model is loaded once in RAM via Streamlit caching; inference <10 ms with zero external API calls.  
+- **Evaluation:** Validated on a held‑out test set (F1 0.95–0.99) and manually stress‑tested with edge cases (wealthy households, elderly alone).
 
 ---
 
