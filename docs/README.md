@@ -24,6 +24,10 @@ This folder contains the **visual documentation** of the SIMPEL application for 
 ![Streamlit Print](screenshots/4_print_streamlit.png)
 *The page is print‑friendly. Users can press Ctrl+P to get a physical checklist to bring to the village office. The disclaimer remains visible in print.*
 
+#### 5. Downloaded HTML Result
+![Downloaded HTML](screenshots/5_html_download.png)
+*After clicking the **"Download Result (HTML)"** button, a clean, self‑contained HTML file is saved to the user's device. This file can be opened in any browser, printed, or shared via messaging apps. It includes all result cards, the document checklist, the office address, and the disclaimer — formatted with the same clarity as the live app.*
+
 ---
 
 ### 🎨 Figma Prototype
@@ -38,7 +42,6 @@ This folder contains the **visual documentation** of the SIMPEL application for 
 
 #### 3. Disclaimer Banner (Mockup)
 ![Figma Disclaimer](screenshots/3_disclaimer_figma.png)
-
 *The yellow disclaimer as designed — always visible, never dismissible.*
 
 #### 4. Print Layout (Mockup)
