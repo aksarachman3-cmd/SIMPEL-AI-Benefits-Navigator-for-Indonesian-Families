@@ -6,38 +6,6 @@ from lang import strings
 # ---------- PAGE CONFIG ----------
 st.set_page_config(page_title="SIMPEL", page_icon="🧭", layout="centered")
 
-# ---------- PRINT STYLES ----------
-st.markdown("""
-<style>
-@media print {
-  /* Hide everything by default */
-  body * {
-    visibility: hidden;
-  }
-  /* Show only the print area and its contents */
-  #print-area, #print-area * {
-    visibility: visible;
-  }
-  /* Position the print area at the top left */
-  #print-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    padding: 20px;
-  }
-  /* Force all expanders to be fully opened when printing */
-  .streamlit-expanderContent {
-    display: block !important;
-  }
-  /* Make the expander header visible as well */
-  .streamlit-expanderHeader {
-    visibility: visible;
-  }
-}
-</style>
-""", unsafe_allow_html=True)
-
 # ---------- LANGUAGE SETUP ----------
 if 'lang' not in st.session_state:
     st.session_state.lang = 'id'
@@ -219,6 +187,50 @@ if st.button(t["btn"], type="primary"):
         st.markdown('</div>', unsafe_allow_html=True)
         # ---------- PRINT AREA END ----------
 
-        # ---------- RESET BUTTON (outside print area) ----------
+        # ---------- MOVE PRINT AREA FOR RELIABLE CTRL+P ----------
+        st.markdown("""
+        <script>
+        (function() {
+            var printArea = document.getElementById('print-area');
+            if (printArea) {
+                // Move the print area to the body so it becomes a direct child,
+                // which makes it immune to Streamlit's nested visibility styles.
+                document.body.appendChild(printArea);
+                // Hide it from normal view, but it will be shown in print via CSS.
+                printArea.style.display = 'none';
+            }
+        })();
+        </script>
+        """, unsafe_allow_html=True)
+
+        # ---------- PRINT STYLES (appended to body to avoid scoping issues) ----------
+        st.markdown("""
+        <style>
+        @media print {
+            /* Hide all body children EXCEPT #print-area */
+            body > *:not(#print-area) {
+                display: none !important;
+            }
+            /* Ensure the print area is visible and full width */
+            #print-area {
+                display: block !important;
+                position: static;
+                width: 100%;
+                padding: 20px;
+                visibility: visible !important;
+            }
+            /* Expand all Streamlit expanders */
+            .streamlit-expanderContent {
+                display: block !important;
+            }
+            /* Show expander headers */
+            .streamlit-expanderHeader {
+                display: block !important;
+            }
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # ---------- RESET BUTTON ----------
         if st.button(t["reset"]):
             st.rerun()
