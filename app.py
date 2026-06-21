@@ -2,7 +2,6 @@ import streamlit as st
 import joblib
 import numpy as np
 from lang import strings
-from fpdf import FPDF
 
 # ---------- PAGE CONFIG ----------
 st.set_page_config(page_title="SIMPEL", page_icon="🧭", layout="centered")
@@ -123,104 +122,59 @@ if st.button(t["btn"], type="primary"):
         st.warning(t["disclaimer"])
         st.info(t["print_tip"])
 
-        # ---------- GENERATE PDF (safe ASCII only) ----------
-        try:
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_auto_page_break(auto=True, margin=15)
+        # ---------- BUILD HTML STRING FOR DOWNLOAD ----------
+        html_content = f"""<!DOCTYPE html>
+<html lang="{lang}">
+<head><meta charset="UTF-8"><title>Hasil SIMPEL</title>
+<style>
+  body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 20px; color: #000; }}
+  h2 {{ color: #1E90FF; }}
+  .card {{ border: 1px solid #ccc; border-radius: 8px; padding: 15px; margin-bottom: 12px; }}
+  .card h3 {{ margin-top: 0; color: #10B981; }}
+  .disclaimer {{ margin-top: 20px; padding: 12px; background: #FFF3CD; border-left: 4px solid #F59E0B; }}
+  .print-tip {{ color: #666; font-style: italic; margin-top: 10px; }}
+  .doc-list {{ padding-left: 20px; }}
+</style>
+</head>
+<body>
+<h2>{t["result_title"]}</h2>
+"""
+        if not program_list:
+            html_content += f"<p>{t['no_result']}</p>"
+        else:
+            html_content += f"<p><strong>{t['success_msg'].format(len(program_list))}</strong></p>"
+            for prog in program_list:
+                info = program_info[prog]
+                conf = confidences[prog]
+                html_content += f"""
+<div class="card">
+  <h3>✅ {info['nama']} — {t['why']} {conf:.0%}</h3>
+  <p><strong>{t['why']}</strong> {info['alasan']}</p>
+  <p><strong>{t['desc']}:</strong> {info['deskripsi']}</p>
+  <p><strong>{t['docs']}:</strong></p>
+  <ul class="doc-list">
+"""
+                for doc in info['dokumen'].split(', '):
+                    html_content += f"    <li>{doc}</li>\n"
+                html_content += f"""  </ul>
+  <p><strong>{t['place']}:</strong> {info['tempat']}</p>
+  <p><strong>{t['source']}:</strong> {info['sumber']}</p>
+</div>
+"""
+        html_content += f"""
+<div class="disclaimer">
+  <strong>⚠️ {t['disclaimer'].replace('**', '').replace('*', '')}</strong>
+</div>
+<div class="print-tip">{t['print_tip']}</div>
+</body></html>
+"""
 
-            # ---- Clean text to remove all characters unsupported by Helvetica ----
-            def clean(text):
-                out = []
-                for ch in text:
-                    if ch in ("—", "–"):
-                        out.append("-")          # em/en dash → hyphen
-                    elif ch in ("’", "'"):
-                        out.append("'")          # curly right single quote → straight apostrophe
-                    elif ch in ("“", "”", '"'):
-                        out.append('"')          # curly double quotes → straight quote
-                    elif ord(ch) < 128 and (ch.isprintable() or ch in "\n\r\t"):
-                        out.append(ch)           # keep ASCII printable and control characters
-                    # else: drop emojis, bullets, and other unsupported characters
-                return "".join(out).strip()
-
-            # Title
-            pdf.set_font("Helvetica", 'B', 16)
-            pdf.cell(0, 10, txt=clean(t["result_title"]), ln=True, align='C')
-            pdf.ln(6)
-
-            if not program_list:
-                pdf.set_font("Helvetica", '', 11)
-                pdf.multi_cell(0, 6, txt=clean(t["no_result"]))
-            else:
-                success_msg = clean(t["success_msg"].format(len(program_list)))
-                pdf.set_font("Helvetica", '', 11)
-                pdf.multi_cell(0, 6, txt=success_msg)
-                pdf.ln(4)
-
-                for prog in program_list:
-                    info = program_info[prog]
-                    conf = confidences[prog]
-
-                    prog_name = clean(info['nama'])
-                    pdf.set_font("Helvetica", 'B', 12)
-                    pdf.cell(0, 8, txt=f"{prog_name} - {t['why']} {conf:.0%}", ln=True)
-                    pdf.set_font("Helvetica", '', 10)
-
-                    pdf.multi_cell(0, 5, txt=f"{t['why']} {clean(info['alasan'])}")
-                    pdf.multi_cell(0, 5, txt=f"{t['desc']}: {clean(info['deskripsi'])}")
-                    pdf.ln(2)
-                    pdf.set_font("Helvetica", 'B', 10)
-                    pdf.cell(0, 6, txt=f"{t['docs']}:", ln=True)
-                    pdf.set_font("Helvetica", '', 10)
-                    for doc in info['dokumen'].split(', '):
-                        pdf.cell(8, 6, txt="")
-                        pdf.cell(0, 6, txt=f"- {clean(doc)}", ln=True)   # hyphen instead of bullet
-                    pdf.ln(2)
-                    pdf.set_font("Helvetica", 'B', 10)
-                    pdf.cell(0, 6, txt=f"{t['place']}: ", ln=False)
-                    pdf.set_font("Helvetica", '', 10)
-                    pdf.cell(0, 6, txt=clean(info['tempat']), ln=True)
-                    pdf.set_font("Helvetica", 'B', 10)
-                    pdf.cell(0, 6, txt=f"{t['source']}: ", ln=False)
-                    pdf.set_font("Helvetica", '', 10)
-                    sumber_text = info['sumber']
-                    if '[' in sumber_text and '](' in sumber_text:
-                        start_text = sumber_text.index('[') + 1
-                        end_text = sumber_text.index(']')
-                        start_url = sumber_text.index('(') + 1
-                        end_url = sumber_text.index(')')
-                        link_text = sumber_text[start_text:end_text]
-                        url = sumber_text[start_url:end_url]
-                        sumber_text = f"{link_text} ({url})"
-                    pdf.cell(0, 6, txt=clean(sumber_text), ln=True)
-                    pdf.ln(5)
-
-            # Disclaimer
-            pdf.ln(4)
-            pdf.set_fill_color(255, 243, 205)
-            pdf.set_font("Helvetica", 'B', 9)
-            disclaimer_clean = clean(t["disclaimer"])
-            pdf.multi_cell(0, 5, txt=disclaimer_clean, fill=True)
-            pdf.ln(4)
-
-            # Print tip
-            pdf.set_font("Helvetica", 'I', 9)
-            pdf.multi_cell(0, 5, txt=clean(t["print_tip"]))
-
-            # Output PDF
-            pdf_bytes = pdf.output()
-
-            # Download button
-            st.download_button(
-                label="📄 Download Result (PDF)",
-                data=pdf_bytes,
-                file_name="simpel-result.pdf",
-                mime="application/pdf",
-            )
-
-        except Exception as e:
-            st.error(f"PDF generation failed: {e}")
+        st.download_button(
+            label="📄 Download Hasil (HTML)",
+            data=html_content,
+            file_name="simpel-result.html",
+            mime="text/html",
+        )
 
         # ---------- RESET BUTTON ----------
         if st.button(t["reset"]):
