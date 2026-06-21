@@ -2,6 +2,7 @@ import streamlit as st
 import joblib
 import numpy as np
 from lang import strings
+from fpdf import FPDF
 
 # ---------- PAGE CONFIG ----------
 st.set_page_config(page_title="SIMPEL", page_icon="🧭", layout="centered")
@@ -99,8 +100,6 @@ if st.button(t["btn"], type="primary"):
         program_list = [p for p in urutan if p in program_list]
 
         # ---------- DISPLAY RESULTS ON SCREEN ----------
-        st.markdown('<div id="result-area">', unsafe_allow_html=True)
-
         st.markdown("---")
         st.subheader(t["result_title"])
 
@@ -124,30 +123,99 @@ if st.button(t["btn"], type="primary"):
         st.warning(t["disclaimer"])
         st.info(t["print_tip"])
 
-        st.markdown('</div>', unsafe_allow_html=True)
+        # ---------- GENERATE PDF & DOWNLOAD BUTTON ----------
+        try:
+            pdf = FPDF()
+            pdf.add_page()
+            pdf.set_auto_page_break(auto=True, margin=15)
 
-        # ---------- DOWNLOAD BUTTON (html2canvas) ----------
-        st.markdown("""
-        <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
-        <script>
-        function downloadResultImage() {
-            const element = document.getElementById('result-area');
-            html2canvas(element, { scale: 2 }).then(canvas => {
-                canvas.toBlob(function(blob) {
-                    const link = document.createElement('a');
-                    link.download = 'simpel-result.png';
-                    link.href = URL.createObjectURL(blob);
-                    link.click();
-                }, 'image/png');
-            });
-        }
-        </script>
-        <div style="text-align: center; margin-top: 20px;">
-            <button onclick="downloadResultImage()" style="padding: 10px 24px; background-color: #10B981; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer;">
-                📥 Download Result as Image
-            </button>
-        </div>
-        """, unsafe_allow_html=True)
+            # ---- Helper function to strip emojis and markdown ----
+            def clean(text):
+                # Remove common emojis and asterisks
+                for ch in ["📋", "✅", "⚠️", "💡", "🧭", "🔍", "📄", "🔄", "**", "*"]:
+                    text = text.replace(ch, "")
+                return text.strip()
+
+            # Title
+            pdf.set_font("Helvetica", 'B', 16)
+            pdf.cell(0, 10, txt=clean(t["result_title"]), ln=True, align='C')
+            pdf.ln(6)
+
+            if not program_list:
+                pdf.set_font("Helvetica", size=11)
+                pdf.multi_cell(0, 6, txt=clean(t["no_result"]))
+            else:
+                success_msg = clean(t["success_msg"].format(len(program_list)))
+                pdf.set_font("Helvetica", size=11)
+                pdf.multi_cell(0, 6, txt=success_msg)
+                pdf.ln(4)
+
+                for prog in program_list:
+                    info = program_info[prog]
+                    conf = confidences[prog]
+
+                    prog_name = clean(info['nama'])
+                    pdf.set_font("Helvetica", 'B', 12)
+                    pdf.cell(0, 8, txt=f"{prog_name} — {t['why']} {conf:.0%}", ln=True)
+                    pdf.set_font("Helvetica", size=10)
+
+                    pdf.multi_cell(0, 5, txt=f"{t['why']} {info['alasan']}")
+                    pdf.multi_cell(0, 5, txt=f"{t['desc']}: {info['deskripsi']}")
+                    pdf.ln(2)
+                    pdf.set_font("Helvetica", 'B', 10)
+                    pdf.cell(0, 6, txt=f"{t['docs']}:", ln=True)
+                    pdf.set_font("Helvetica", size=10)
+                    for doc in info['dokumen'].split(', '):
+                        pdf.cell(8, 6, txt="")
+                        pdf.cell(0, 6, txt=f"• {doc}", ln=True)
+                    pdf.ln(2)
+                    pdf.set_font("Helvetica", 'B', 10)
+                    pdf.cell(0, 6, txt=f"{t['place']}: ", ln=False)
+                    pdf.set_font("Helvetica", size=10)
+                    pdf.cell(0, 6, txt=info['tempat'], ln=True)
+                    pdf.set_font("Helvetica", 'B', 10)
+                    pdf.cell(0, 6, txt=f"{t['source']}: ", ln=False)
+                    pdf.set_font("Helvetica", size=10)
+                    # PDF won't render markdown links – we just output the URL text
+                    sumber_text = info['sumber']
+                    # If it's markdown, extract URL and text (simple approach)
+                    if '[' in sumber_text and '](' in sumber_text:
+                        # e.g., "[Kemensos – PKH](https://...)"
+                        start_text = sumber_text.index('[') + 1
+                        end_text = sumber_text.index(']')
+                        start_url = sumber_text.index('(') + 1
+                        end_url = sumber_text.index(')')
+                        link_text = sumber_text[start_text:end_text]
+                        url = sumber_text[start_url:end_url]
+                        sumber_text = f"{link_text} ({url})"
+                    pdf.cell(0, 6, txt=sumber_text, ln=True)
+                    pdf.ln(5)
+
+            # Disclaimer
+            pdf.ln(4)
+            pdf.set_fill_color(255, 243, 205)
+            pdf.set_font("Helvetica", 'B', 9)
+            disclaimer_clean = clean(t["disclaimer"])
+            pdf.multi_cell(0, 5, txt=disclaimer_clean, fill=True)
+            pdf.ln(4)
+
+            # Print tip
+            pdf.set_font("Helvetica", 'I', 9)
+            pdf.multi_cell(0, 5, txt=clean(t["print_tip"]))
+
+            # Output PDF
+            pdf_bytes = pdf.output()
+
+            # Download button
+            st.download_button(
+                label="📄 Download Result (PDF)",
+                data=pdf_bytes,
+                file_name="simpel-result.pdf",
+                mime="application/pdf",
+            )
+
+        except Exception as e:
+            st.error(f"PDF generation failed: {e}")
 
         # ---------- RESET BUTTON ----------
         if st.button(t["reset"]):
