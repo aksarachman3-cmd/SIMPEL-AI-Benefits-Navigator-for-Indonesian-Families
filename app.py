@@ -9,30 +9,28 @@ st.set_page_config(page_title="SIMPEL", page_icon="🧭", layout="centered")
 # ---------- PRINT STYLES ----------
 st.markdown("""
 <style>
+/* Hide the whole Streamlit main container when printing */
 @media print {
-  /* Hide everything by default */
-  body * {
-    visibility: hidden;
+  .main > div {
+    display: none !important;
   }
-  /* Show only the print area and its contents */
-  #print-area, #print-area * {
-    visibility: visible;
-  }
-  /* Position the print area at the top left */
+  /* Only show the print-area div */
   #print-area {
+    display: block !important;
     position: absolute;
-    left: 0;
     top: 0;
+    left: 0;
     width: 100%;
     padding: 20px;
+    visibility: visible;
   }
   /* Force all expanders to be fully opened when printing */
   .streamlit-expanderContent {
     display: block !important;
   }
-  /* Make the expander header visible as well */
+  /* Make the expander header visible */
   .streamlit-expanderHeader {
-    visibility: visible;
+    display: block !important;
   }
 }
 </style>
@@ -215,6 +213,16 @@ if st.button(t["btn"], type="primary"):
 
         # ---------- PRINTING TIPS ----------
         st.info(t["print_tip"])
+
+        # ---------- PRINT BUTTON ----------
+        st.markdown("""
+        <script>
+        function printResult() { window.print(); }
+        </script>
+        <button onclick="printResult()" style="padding:8px 16px; margin-top:10px; background:#1E90FF; color:white; border:none; border-radius:6px; cursor:pointer;">
+          🖨️ Print this page
+        </button>
+        """, unsafe_allow_html=True)
 
         st.markdown('</div>', unsafe_allow_html=True)
         # ---------- PRINT AREA END ----------
