@@ -10,7 +10,6 @@ st.set_page_config(page_title="SIMPEL", page_icon="🧭", layout="centered")
 if 'lang' not in st.session_state:
     st.session_state.lang = 'id'
 
-# Language selector in a compact top-right column
 _, lang_col = st.columns([5, 1])
 with lang_col:
     lang = st.selectbox(
@@ -48,84 +47,38 @@ st.caption(t["caption"])
 program_info = t["program_info"]
 
 # ---------- QUESTIONNAIRE ----------
-# Original Indonesian option strings (used internally for model mapping)
 income_options_id = ["< Rp500.000", "Rp500.000 – Rp1.000.000", "Rp1.000.000 – Rp2.000.000", "> Rp2.000.000"]
 family_options_id = ["1", "2", "3", "4", "5 atau lebih"]
 wall_options_id = ["Tembok", "Semi permanen (setengah tembok)", "Papan/kayu", "Bambu/lainnya"]
 yes_no_id = ["Ya", "Tidak"]
 
-# Translated display lists
 income_display = t["income_options"]
 family_display = t["family_options"]
 wall_display = t["wall_options"]
 yes_no_display = [t["yes"], t["no"]]
 
-pendapatan = st.selectbox(
-    t["q1"],
-    income_options_id,
-    format_func=lambda x: income_display[income_options_id.index(x)]
-)
-
-jumlah_anggota = st.selectbox(
-    t["q2"],
-    family_options_id,
-    format_func=lambda x: family_display[family_options_id.index(x)]
-)
-
-anak_sekolah = st.radio(
-    t["q3"],
-    yes_no_id,
-    format_func=lambda x: t["yes"] if x == "Ya" else t["no"]
-)
-
-anak_balita = st.radio(
-    t["q4"],
-    yes_no_id,
-    format_func=lambda x: t["yes"] if x == "Ya" else t["no"]
-)
-
-lansia = st.radio(
-    t["q5"],
-    yes_no_id,
-    format_func=lambda x: t["yes"] if x == "Ya" else t["no"]
-)
-
-disabilitas = st.radio(
-    t["q6"],
-    yes_no_id,
-    format_func=lambda x: t["yes"] if x == "Ya" else t["no"]
-)
-
-dinding_rumah = st.selectbox(
-    t["q7"],
-    wall_options_id,
-    format_func=lambda x: wall_display[wall_options_id.index(x)]
-)
+pendapatan = st.selectbox(t["q1"], income_options_id, format_func=lambda x: income_display[income_options_id.index(x)])
+jumlah_anggota = st.selectbox(t["q2"], family_options_id, format_func=lambda x: family_display[family_options_id.index(x)])
+anak_sekolah = st.radio(t["q3"], yes_no_id, format_func=lambda x: t["yes"] if x == "Ya" else t["no"])
+anak_balita = st.radio(t["q4"], yes_no_id, format_func=lambda x: t["yes"] if x == "Ya" else t["no"])
+lansia = st.radio(t["q5"], yes_no_id, format_func=lambda x: t["yes"] if x == "Ya" else t["no"])
+disabilitas = st.radio(t["q6"], yes_no_id, format_func=lambda x: t["yes"] if x == "Ya" else t["no"])
+dinding_rumah = st.selectbox(t["q7"], wall_options_id, format_func=lambda x: wall_display[wall_options_id.index(x)])
 
 # ---------- BUTTON & AI PREDICTION ----------
 if st.button(t["btn"], type="primary"):
     if not model_loaded:
         st.error("Model AI tidak tersedia. Periksa kembali folder model/.")
     else:
-        # Map the text responses to numbers (must match training data)
         income_map = {
-            "< Rp500.000": 0,
-            "Rp500.000 – Rp1.000.000": 1,
-            "Rp1.000.000 – Rp2.000.000": 2,
-            "> Rp2.000.000": 3
+            "< Rp500.000": 0, "Rp500.000 – Rp1.000.000": 1,
+            "Rp1.000.000 – Rp2.000.000": 2, "> Rp2.000.000": 3
         }
         anggota_map = {"1": 1, "2": 2, "3": 3, "4": 4, "5 atau lebih": 5}
-        dinding_map = {
-            "Tembok": 0,
-            "Semi permanen (setengah tembok)": 1,
-            "Papan/kayu": 2,
-            "Bambu/lainnya": 3
-        }
+        dinding_map = {"Tembok": 0, "Semi permanen (setengah tembok)": 1, "Papan/kayu": 2, "Bambu/lainnya": 3}
 
-        # Create an array of 7 features
         features = np.array([
-            income_map[pendapatan],
-            anggota_map[jumlah_anggota],
+            income_map[pendapatan], anggota_map[jumlah_anggota],
             1 if anak_sekolah == "Ya" else 0,
             1 if anak_balita == "Ya" else 0,
             1 if lansia == "Ya" else 0,
@@ -133,27 +86,66 @@ if st.button(t["btn"], type="primary"):
             dinding_map[dinding_rumah]
         ]).reshape(1, -1)
 
-        # Multi-label probability prediction
         proba = model.predict_proba(features)
 
-        # Collect programs with a probability of ≥ 0.5
-        program_list = []
-        confidences = {}
+        program_list, confidences = [], {}
         program_names = list(encoder.classes_)
-
         for i, prog in enumerate(program_names):
             if proba[i][0][1] >= 0.5:
                 program_list.append(prog)
-                raw_conf = proba[i][0][1]
-                confidences[prog] = min(raw_conf, 0.95)
+                confidences[prog] = min(proba[i][0][1], 0.95)
 
-        # Arrange the programs in a natural order: PKH, BPNT, PIP, PBI_JKN
         urutan = ["PKH", "BPNT", "PIP", "PBI_JKN"]
         program_list = [p for p in urutan if p in program_list]
 
-        # ---------- PRINT AREA START ----------
-        st.markdown('<div id="print-area">', unsafe_allow_html=True)
+        # ---------- BUILD THE RESULT HTML (for print hijack) ----------
+        result_html = f"""
+        <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+            <h2>{t["result_title"]}</h2>
+            <p><strong>{t["success_msg"].format(len(program_list))}</strong></p>
+        """
+        for prog in program_list:
+            info = program_info[prog]
+            conf = confidences[prog]
+            result_html += f"""
+            <div style="border: 1px solid #ccc; border-radius: 8px; padding: 15px; margin-bottom: 10px;">
+                <h3>✅ {info['nama']} – {t["why"]} {conf:.0%}</h3>
+                <p><strong>{t["why"]}</strong> {info['alasan']}</p>
+                <p><strong>{t["desc"]}:</strong> {info['deskripsi']}</p>
+                <p><strong>{t["docs"]}:</strong><br>{info['dokumen'].replace(', ', '<br>- ')}</p>
+                <p><strong>{t["place"]}:</strong> {info['tempat']}</p>
+                <p><strong>{t["source"]}:</strong> {info['sumber']}</p>
+            </div>
+            """
+        result_html += f"""
+            <div style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border-left: 4px solid #ffc107;">
+                <strong>⚠️ {t["disclaimer"].replace('**', '')}</strong>
+            </div>
+            <p style="color: #666; margin-top: 10px;">{t["print_tip"]}</p>
+        </div>
+        """
 
+        # ---------- HIJACK PRINT WITH JAVASCRIPT ----------
+        st.markdown(f"""
+        <script>
+        var printContent = `{result_html}`;
+        var originalBody = null;
+
+        window.onbeforeprint = function() {{
+            originalBody = document.body.innerHTML;
+            document.body.innerHTML = printContent;
+        }};
+
+        window.onafterprint = function() {{
+            if (originalBody) {{
+                document.body.innerHTML = originalBody;
+                originalBody = null;
+            }}
+        }};
+        </script>
+        """, unsafe_allow_html=True)
+
+        # ---------- SHOW THE RESULTS ON SCREEN (normal Streamlit UI) ----------
         st.markdown("---")
         st.subheader(t["result_title"])
 
@@ -161,76 +153,21 @@ if st.button(t["btn"], type="primary"):
             st.warning(t["no_result"])
         else:
             st.success(t["success_msg"].format(len(program_list)))
-
             for prog in program_list:
                 info = program_info[prog]
                 conf = confidences[prog]
-
                 with st.expander(f"✅ {info['nama']} – {t['why']} {conf:.0%}"):
                     st.markdown(f"**{t['why']}** {info['alasan']}")
                     st.markdown(f"**{t['desc']}:** {info['deskripsi']}")
                     st.markdown(f"**{t['docs']}:**")
-                    docs = info['dokumen'].split(', ')
-                    for doc in docs:
+                    for doc in info['dokumen'].split(', '):
                         st.markdown(f"- {doc}")
                     st.markdown(f"**{t['place']}:** {info['tempat']}")
                     st.markdown(f"**{t['source']}:** {info['sumber']}")
 
         st.markdown("---")
-
-        # ---------- DISCLAIMER ----------
         st.warning(t["disclaimer"])
-
-        # ---------- PRINTING TIPS ----------
         st.info(t["print_tip"])
 
-        st.markdown('</div>', unsafe_allow_html=True)
-        # ---------- PRINT AREA END ----------
-
-        # ---------- MOVE PRINT AREA FOR RELIABLE CTRL+P ----------
-        st.markdown("""
-        <script>
-        (function() {
-            var printArea = document.getElementById('print-area');
-            if (printArea) {
-                // Move the print area to the body so it becomes a direct child,
-                // which makes it immune to Streamlit's nested visibility styles.
-                document.body.appendChild(printArea);
-                // Hide it from normal view, but it will be shown in print via CSS.
-                printArea.style.display = 'none';
-            }
-        })();
-        </script>
-        """, unsafe_allow_html=True)
-
-        # ---------- PRINT STYLES (appended to body to avoid scoping issues) ----------
-        st.markdown("""
-        <style>
-        @media print {
-            /* Hide all body children EXCEPT #print-area */
-            body > *:not(#print-area) {
-                display: none !important;
-            }
-            /* Ensure the print area is visible and full width */
-            #print-area {
-                display: block !important;
-                position: static;
-                width: 100%;
-                padding: 20px;
-                visibility: visible !important;
-            }
-            /* Expand all Streamlit expanders */
-            .streamlit-expanderContent {
-                display: block !important;
-            }
-            /* Show expander headers */
-            .streamlit-expanderHeader {
-                display: block !important;
-            }
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
-        # ---------- RESET BUTTON ----------
         if st.button(t["reset"]):
             st.rerun()
