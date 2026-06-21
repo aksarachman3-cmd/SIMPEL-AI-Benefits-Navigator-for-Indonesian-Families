@@ -180,8 +180,8 @@ if st.button(t["btn"], type="primary"):
         st.warning(t["disclaimer"])
 
         # ---------- PRINTING TIPS ----------
-        st.info("💡 Tips: Anda bisa mencetak halaman ini (Ctrl+P) untuk dibawa ke kelurahan sebagai panduan awal.")
+        st.info(t["print_tip"])
 
         # ---------- RESET BUTTON ----------
-        if st.button("🔄 Mulai Ulang"):
+        if st.button(t["reset"]):
             st.rerun()
