@@ -6,6 +6,38 @@ from lang import strings
 # ---------- PAGE CONFIG ----------
 st.set_page_config(page_title="SIMPEL", page_icon="🧭", layout="centered")
 
+# ---------- PRINT STYLES ----------
+st.markdown("""
+<style>
+@media print {
+  /* Hide everything by default */
+  body * {
+    visibility: hidden;
+  }
+  /* Show only the print area and its contents */
+  #print-area, #print-area * {
+    visibility: visible;
+  }
+  /* Position the print area at the top left */
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 20px;
+  }
+  /* Force all expanders to be fully opened when printing */
+  .streamlit-expanderContent {
+    display: block !important;
+  }
+  /* Make the expander header visible as well */
+  .streamlit-expanderHeader {
+    visibility: visible;
+  }
+}
+</style>
+""", unsafe_allow_html=True)
+
 # ---------- LANGUAGE SETUP ----------
 if 'lang' not in st.session_state:
     st.session_state.lang = 'id'
@@ -151,7 +183,9 @@ if st.button(t["btn"], type="primary"):
         urutan = ["PKH", "BPNT", "PIP", "PBI_JKN"]
         program_list = [p for p in urutan if p in program_list]
 
-        # ---------- SHOW RESULTS ----------
+        # ---------- PRINT AREA START ----------
+        st.markdown('<div id="print-area">', unsafe_allow_html=True)
+
         st.markdown("---")
         st.subheader(t["result_title"])
 
@@ -182,6 +216,9 @@ if st.button(t["btn"], type="primary"):
         # ---------- PRINTING TIPS ----------
         st.info(t["print_tip"])
 
-        # ---------- RESET BUTTON ----------
+        st.markdown('</div>', unsafe_allow_html=True)
+        # ---------- PRINT AREA END ----------
+
+        # ---------- RESET BUTTON (outside print area) ----------
         if st.button(t["reset"]):
             st.rerun()
