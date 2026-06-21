@@ -129,11 +129,18 @@ if st.button(t["btn"], type="primary"):
             pdf.add_page()
             pdf.set_auto_page_break(auto=True, margin=15)
 
-            # ---- Helper function to strip emojis and markdown ----
+            # ---- Helper function to strip emojis, markdown, and unsafe Unicode ----
             def clean(text):
-                # Remove common emojis and asterisks
-                for ch in ["📋", "✅", "⚠️", "💡", "🧭", "🔍", "📄", "🔄", "**", "*"]:
-                    text = text.replace(ch, "")
+                # Remove emojis, markdown formatting, and Unicode characters
+                # that the built-in Helvetica font cannot render
+                for ch in [
+                    "📋", "✅", "⚠️", "💡", "🧭", "🔍", "📄", "🔄",
+                    "**", "*",           # Markdown
+                    "—", "–",           # Em dash, en dash
+                    "’", "'",           # Curly quotes
+                    "“", "”", '"',      # Curly double quotes
+                ]:
+                    text = text.replace(ch, "-" if ch in ["—", "–"] else "")
                 return text.strip()
 
             # Title
@@ -156,31 +163,29 @@ if st.button(t["btn"], type="primary"):
 
                     prog_name = clean(info['nama'])
                     pdf.set_font("Helvetica", 'B', 12)
-                    pdf.cell(0, 8, txt=f"{prog_name} — {t['why']} {conf:.0%}", ln=True)
+                    # Use a simple hyphen instead of em dash
+                    pdf.cell(0, 8, txt=f"{prog_name} - {t['why']} {conf:.0%}", ln=True)
                     pdf.set_font("Helvetica", size=10)
 
-                    pdf.multi_cell(0, 5, txt=f"{t['why']} {info['alasan']}")
-                    pdf.multi_cell(0, 5, txt=f"{t['desc']}: {info['deskripsi']}")
+                    pdf.multi_cell(0, 5, txt=f"{t['why']} {clean(info['alasan'])}")
+                    pdf.multi_cell(0, 5, txt=f"{t['desc']}: {clean(info['deskripsi'])}")
                     pdf.ln(2)
                     pdf.set_font("Helvetica", 'B', 10)
                     pdf.cell(0, 6, txt=f"{t['docs']}:", ln=True)
                     pdf.set_font("Helvetica", size=10)
                     for doc in info['dokumen'].split(', '):
                         pdf.cell(8, 6, txt="")
-                        pdf.cell(0, 6, txt=f"• {doc}", ln=True)
+                        pdf.cell(0, 6, txt=f"• {clean(doc)}", ln=True)
                     pdf.ln(2)
                     pdf.set_font("Helvetica", 'B', 10)
                     pdf.cell(0, 6, txt=f"{t['place']}: ", ln=False)
                     pdf.set_font("Helvetica", size=10)
-                    pdf.cell(0, 6, txt=info['tempat'], ln=True)
+                    pdf.cell(0, 6, txt=clean(info['tempat']), ln=True)
                     pdf.set_font("Helvetica", 'B', 10)
                     pdf.cell(0, 6, txt=f"{t['source']}: ", ln=False)
                     pdf.set_font("Helvetica", size=10)
-                    # PDF won't render markdown links – we just output the URL text
                     sumber_text = info['sumber']
-                    # If it's markdown, extract URL and text (simple approach)
                     if '[' in sumber_text and '](' in sumber_text:
-                        # e.g., "[Kemensos – PKH](https://...)"
                         start_text = sumber_text.index('[') + 1
                         end_text = sumber_text.index(']')
                         start_url = sumber_text.index('(') + 1
@@ -188,7 +193,7 @@ if st.button(t["btn"], type="primary"):
                         link_text = sumber_text[start_text:end_text]
                         url = sumber_text[start_url:end_url]
                         sumber_text = f"{link_text} ({url})"
-                    pdf.cell(0, 6, txt=sumber_text, ln=True)
+                    pdf.cell(0, 6, txt=clean(sumber_text), ln=True)
                     pdf.ln(5)
 
             # Disclaimer
