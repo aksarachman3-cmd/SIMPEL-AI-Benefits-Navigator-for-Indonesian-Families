@@ -1,4 +1,3 @@
-# lang.py
 strings = {
     "id": {
         "lang_label": "🌐 Bahasa",
@@ -29,6 +28,7 @@ strings = {
         "disclaimer": "⚠️ **Peringatan Penting:** Hasil ini **bukan keputusan resmi** dan hanya bersifat simulasi. Kriteria sebenarnya bisa lebih kompleks dan dapat berubah sewaktu‑waktu. **Harap verifikasi langsung ke kelurahan atau dinas sosial terdekat.** Ini adalah alat bantu, bukan penentu akhir.",
         "print_tip": "💡 Tips: Anda bisa mencetak halaman ini (Ctrl+P) untuk dibawa ke kelurahan sebagai panduan awal.",
         "reset": "🔄 Mulai Ulang",
+        "download_btn": "📄 Download Hasil (HTML)",
         "program_info": {
             "PKH": {
                 "nama": "Program Keluarga Harapan (PKH)",
@@ -93,6 +93,7 @@ strings = {
         "disclaimer": "⚠️ **Important Notice:** This result is **not an official decision** and is only a simulation. Actual criteria may be more complex and subject to change. **Please verify directly at the village office or local social services.** This is a helper tool, not a final decision.",
         "print_tip": "💡 Tip: You can print this page (Ctrl+P) to take to the village office as a guide.",
         "reset": "🔄 Start Over",
+        "download_btn": "📄 Download Result (HTML)",
         "program_info": {
             "PKH": {
                 "nama": "Family Hope Program (PKH)",

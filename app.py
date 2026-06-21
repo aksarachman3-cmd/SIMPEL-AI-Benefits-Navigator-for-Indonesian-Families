@@ -170,7 +170,7 @@ if st.button(t["btn"], type="primary"):
 """
 
         st.download_button(
-            label="📄 Download Hasil (HTML)",
+            label=t["download_btn"],
             data=html_content,
             file_name="simpel-result.html",
             mime="text/html",
