@@ -141,7 +141,7 @@ if st.button(t["btn"], type="primary"):
                         out.append('"')          # curly double quotes → straight quote
                     elif ord(ch) < 128 and (ch.isprintable() or ch in "\n\r\t"):
                         out.append(ch)           # keep ASCII printable and control characters
-                    # else: drop emojis and other unsupported characters
+                    # else: drop emojis, bullets, and other unsupported characters
                 return "".join(out).strip()
 
             # Title
@@ -175,7 +175,7 @@ if st.button(t["btn"], type="primary"):
                     pdf.set_font("Helvetica", '', 10)
                     for doc in info['dokumen'].split(', '):
                         pdf.cell(8, 6, txt="")
-                        pdf.cell(0, 6, txt=f"• {clean(doc)}", ln=True)
+                        pdf.cell(0, 6, txt=f"- {clean(doc)}", ln=True)   # hyphen instead of bullet
                     pdf.ln(2)
                     pdf.set_font("Helvetica", 'B', 10)
                     pdf.cell(0, 6, txt=f"{t['place']}: ", ln=False)
